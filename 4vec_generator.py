@@ -30,14 +30,15 @@ fourvec_array[:,1] = neutron_mass
 # Set weight to 1
 fourvec_array[:,-1] = 1
 
-# Set x coordinate to rock wall
-fourvec_array[:,2] = 33.
+# Set coordinates at rock wall
+rock_thickness = 1.0
+x_at_det = 33.
+x_at_rock = x_at_det - rock_thickness
+fourvec_array[:,2] = x_at_rock
 
 # Find y and z range at rock wall
-
 y_at_det = 1.6/2
-x_at_det = 50.
-x_rock_to_det_ratio = 33./50.
+x_rock_to_det_ratio = x_at_rock/x_at_det
 y_at_rock = y_at_det*x_rock_to_det_ratio
 z_at_det = 1.2/2
 z_at_rock = z_at_det*x_rock_to_det_ratio
