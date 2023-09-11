@@ -42,8 +42,6 @@ int main(int argc, char **argv) {
   TString output_file = "out.root";
   // output found particle info
   bool verbose = false;
-  //type of events to make
-  int myprocess=0;
 
   // process commandline arguments
   int c;
@@ -63,9 +61,6 @@ int main(int argc, char **argv) {
       case 'p':  // jet pT (pTHat) cut in GeV
         manualpTcut = std::stod(optarg);
 		pTInput = true;
-        break;
-      case 't':  // type of process to make
-        myprocess = std::stod(optarg);
         break;
       case '?':
         cout << "Error: Invalid option" << endl;
@@ -90,42 +85,11 @@ int main(int argc, char **argv) {
   pythia.readString("Random:setSeed = on");
   pythia.readString("Random:seed = " + strsRanSeed.str());
   
-  if (myprocess==0){    
-	pythia.readString("HardQCD:all = on"); // Turn on hard QCD processes
-	
-	// Apply jet pT cut
-	std::ostringstream strspT;
-	strspT << pTcut;
-	pythia.readString("PhaseSpace:pTHatMin = " + strspT.str());
-  }
-  else if (myprocess==1){ 
-       pythia.readString("Onia:all = on"); // Turn on all *onia processes
-       
-       // Apply a pT cut
-       double oniaptcut = 2.0; // was 2 GeV for Upsilon and 6.5 GeV for J/psi in original paper (as well as |eta|<2.5)
-       std::ostringstream strspT;
-	   strspT << oniaptcut;
-	   pythia.readString("PhaseSpace:pTHatMin = " + strspT.str());
-  }
-  else if (myprocess==2){
-       pythia.readString("WeakSingleBoson:ffbar2gmZ= on"); // Turn on gamma* and Z
-       
-       // Apply mass cut
-       double mcut = 2.0; // always above 2 GeV, to match original mq paper
-       if (n_mass*2. -1 > mcut){
-          mcut = n_mass*2. -1;
-          std::ostringstream strsm;
-          strsm << mcut;
-          pythia.readString("PhaseSpace:mHatMin = " + strsm.str());
-       }
-  }
-  else {
-         cout << "invalid process: " << myprocess<<endl;
-         return -7;
-  }
-  
-  //Turn off hadronization
-  //pythia.readString("HadronLevel:Hadronize = off");
+  pythia.readString("HardQCD:all = on"); // Turn on hard QCD processes
+  // Apply jet pT cut
+  std::ostringstream strspT;
+  strspT << pTcut;
+  pythia.readString("PhaseSpace:pTHatMin = " + strspT.str());
 
   // Initialization, pp beam @ 13 TeV
   pythia.readString("Beams:idA = 2212");
@@ -216,26 +180,26 @@ int main(int argc, char **argv) {
   cout << "Total number of neutrons generated: " << neutron_n << endl;
 
   // set TTree weight to normalize to cross section and per event
-//  Double_t sigma = pythia.info.sigmaGen();       // total cross section
-//  Double_t sigmaerr = pythia.info.sigmaErr();    // cross section error
-//  Double_t weightsum = pythia.info.weightSum();  // sum of weights (# events)
+  Double_t sigma = pythia.info.sigmaGen();       // total cross section
+  Double_t sigmaerr = pythia.info.sigmaErr();    // cross section error
+  Double_t weightsum = pythia.info.weightSum();  // sum of weights (# events)
 
   // calculate tree weight and error
-  // Double_t tree_weight = sigma / weightsum;
-  // Double_t tree_weight_error = sigmaerr / weightsum;
+  Double_t tree_weight = sigma / weightsum;
+  Double_t tree_weight_error = sigmaerr / weightsum;
 
-  // cout << "sigma is " << sigma << endl;
-  // cout << "weightsum is " << weightsum << endl;
-  // cout << "tree weight is " << tree_weight << endl;
+  cout << "sigma is " << sigma << endl;
+  cout << "weightsum is " << weightsum << endl;
+  cout << "tree weight is " << tree_weight << endl;
 
   // store weight error and mass in TTree
-  // TVectorD sig_err(2);
-  // sig_err[0] = tree_weight_error;
-  // sig_err[1] = n_mass;
-  // t1.GetUserInfo()->Add(&sig_err);
+  TVectorD sig_err(2);
+  sig_err[0] = tree_weight_error;
+  sig_err[1] = n_mass;
+  t1.GetUserInfo()->Add(&sig_err);
 
   // store weight as tree weight
-  // t1.SetWeight(tree_weight);
+  t1.SetWeight(tree_weight);
 
   // write the tree to disk
   t1.Write();
